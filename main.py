@@ -1,3 +1,7 @@
+#Coisas para arrumar em algum momento:
+#1 - As texturas estão deformando apos aplicar o pygame.transform.scale
+
+
 import pygame
 import sys
 import os
