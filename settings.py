@@ -22,7 +22,7 @@ FOOD_SIZE = (27, 28)
 
 # --- 4. Cores (Usadas como fallback e para UI) ---
 COLOR_BLACK = (255, 255, 255)
-COLOR_WHITE = (255, 255, 255)
+COLOR_WHITE = (150, 150, 150)
 COLOR_HEAD_FALLBACK = (0, 200, 0)
 COLOR_BODY_FALLBACK = (0, 150, 0)
 COLOR_FOOD_FALLBACK = (200, 0, 0)

@@ -1,6 +1,6 @@
 #Coisas para arrumar em algum momento:
 #1 - As texturas estão deformando apos aplicar o pygame.transform.scale
-
+#2 - Adicionar animacao nas texturas
 
 import pygame
 import sys
@@ -44,21 +44,58 @@ class Game:
             # 3. Desenhar na Tela
             self._draw()
             
-            # 4. Controlar FPS
+            # 4. Controlar FPS, ou seja, esse loop é executado a cada (1/FPS)segundos, 
             self.clock.tick(FPS)
-            
+    
     def _handle_events(self):
+        #pygame.event.get() pega TODOS os evendos registrados desde a última vez que o comando pygame.event.get() foi chamado
+        #ao chamar o o pygame.event.get() a fila de eventos que foi registrada é resetada
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self._quit_game()            
-            #Passar a captura de eventos, do loop principal, para o objeto da cobra
+
             if self.game_state == "playing":
                 self.snake.handle_input(event)
                 
             elif self.game_state == "game_over":
-                # Se for game over, procura pela tecla 'R'
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                     self._start_new_game()
+
+    def _update(self):       
+        if self.game_state != "playing":
+            return
+                    
+        self.snake.update()
+        
+        #Verifica colisão da cobra com a comida
+        if self.snake.check_collision_food(self.food.rect):
+            #Se comer a comida muda de lugar
+            self.food.respawn() 
+            
+        #Verifica colisões de fim de jogo
+        if self.snake.check_collision_wall() or self.snake.check_collision_self():
+            print("---------------------------Colisão detectada!---------------------------")
+            print("-------------------------------Game Over-------------------------------")
+            self.game_state = "game_over"
+    
+    def _draw(self):    
+        #Limpa a tela
+        self.screen.fill(COLOR_BLACK)
+        
+        #Desenha os objetos
+        self.food.draw(self.screen)
+        self.snake.draw_body(self.screen)
+        self.snake.draw_head(self.screen)
+        
+        #Desenha o placar
+        self._draw_score()
+        
+        # 4. Desenha a tela de Game Over (se aplicável)
+        if self.game_state == "game_over":
+            self._draw_game_over_overlay()
+
+        # 5. Atualiza o display
+        pygame.display.flip()
 
     def _quit_game(self):
         print("Encerrando o jogo...")
@@ -100,7 +137,7 @@ class Game:
             for name in FOOD_SPRITE_NAMES['tipe']:
                 sprite = my_spritesheet.parse_sprite(name)
                 self.sprites['food'].append(pygame.transform.scale(sprite,FOOD_SIZE))
-            #self.food_img_original = my_spritesheet.parse_sprite('food')
+            
             
             print("Sprites carregadas com sucesso! :^}")
 
@@ -133,58 +170,21 @@ class Game:
         self.game_over_font = pygame.font.Font(None, 75)
         self.restart_font = pygame.font.Font(None, 40)
 
-    def _start_new_game(self):
-        #Cria/Reseta os objetos Snake e Food para um novo jogo.
+    def _start_new_game(self):  
+              
         print("Iniciando novo jogo...")
-        self.game_state = "playing"
-        # Agora passamos o dicionário completo de sprites
+        
+        self.game_state = "playing"        
         self.snake = Snake(self.sprites) 
         self.food = Food(self.sprites)
 
-    def _update(self):       
-        if self.game_state != "playing":
-            return
-            
-        self.snake.update()
-        
-        # Verifica colisão da cobra com a comida
-        if self.snake.check_collision_food(self.food.rect):
-            self.food.respawn() # Se comer, a comida muda de lugar
-            
-        # Verifica colisões de fim de jogo
-        if self.snake.check_collision_wall() or self.snake.check_collision_self():
-            print("Game Over: Colisão detectada!")
-            self.game_state = "game_over"
-
-    def _draw(self):    
-        # 1. Limpa a tela
-        self.screen.fill(COLOR_BLACK)
-        
-        # 2. Desenha os objetos
-        self.food.draw(self.screen)
-        self.snake.draw_body(self.screen)
-        self.snake.draw_head(self.screen) # Cabeça por cima do corpo
-        
-        # 3. Desenha a UI (Placar)
-        self._draw_score()
-        
-        # 4. Desenha a tela de Game Over (se aplicável)
-        if self.game_state == "game_over":
-            self._draw_game_over_overlay()
-
-        # 5. Atualiza o display
-        pygame.display.flip()
-
     def _draw_score(self):
-        """Desenha o placar no topo da tela."""
         score_text = f"Placar: {self.snake.score}"
         score_surf = self.score_font.render(score_text, True, COLOR_WHITE)
         score_rect = score_surf.get_rect(center=(SCREEN_WIDTH // 2, 30))
         self.screen.blit(score_surf, score_rect)
 
     def _draw_game_over_overlay(self):
-        """Desenha a tela de "VOCÊ PERDEU"."""
-        # Overlay escuro
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150)) # Preto semi-transparente
         self.screen.blit(overlay, (0, 0))

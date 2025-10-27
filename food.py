@@ -19,6 +19,7 @@ class Food:
     #Gera a comida em um lugar aleatório no mapa
     def respawn(self):
         #Transformar isso em uma funcão
+        
         self.image = self.sprites['food'][random.randint(0,6)]
         #A comida não deve aparecer nas bordas do mapa
         margin_x = 30
