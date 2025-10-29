@@ -17,13 +17,14 @@ class Game:
         
         pygame.init()
         pygame.font.init()
-        
-        #Criar a tela,onde o jogo sera executado, do tamnho definido
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Snake - Isaac")
-        self.clock = pygame.time.Clock()
 
-        #Carregar as texturas, caso as texturas nao sejam carregadas elas serão subistituidas por cores sólidas que estão definidas no arquivo settings.py
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.clock = pygame.time.Clock()
+        
+        pygame.display.set_caption("Snake - Isaac")
+        
+
+        #Carregar as texturas, caso as texturas nao sejam carregadas serão subistituidas por cores sólidas que estão definidas no arquivo settings.py
         self._load_assets()
         self._create_fonts()
         
@@ -78,11 +79,12 @@ class Game:
             print("-------------------------------Game Over-------------------------------")
             self.game_state = "game_over"
     
-    def _draw(self):    
-        #Limpa a tela
-        self.screen.fill(COLOR_BLACK)
-        
-        #Desenha os objetos
+    def _draw(self):   
+
+        self.screen.blit(self.sprites['background'][0], (0, 0)) 
+           
+        self.food.draw(self.screen)        
+
         self.food.draw(self.screen)
         self.snake.draw_body(self.screen)
         self.snake.draw_head(self.screen)
@@ -110,6 +112,7 @@ class Game:
             'head': {'horizontal': [], 'vertical': []},
             'body': {'horizontal': [], 'vertical': []},
             'food': [],
+            'background':[],
             'leftover': None
         }
         
@@ -136,8 +139,11 @@ class Game:
             print("Extraindo sprite da comida...")
             for name in FOOD_SPRITE_NAMES['tipe']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['food'].append(pygame.transform.scale(sprite,FOOD_SIZE))
-            
+                self.sprites['food'].append(pygame.transform.scale(sprite,FOOD_SIZE))            
+                   
+            print("Carregando cenário...")
+            background_path = os.path.join(ASSET_PATH, ARENA_FILENAME)
+            self.sprites['background'].append(pygame.image.load(background_path).convert())
             
             print("Sprites carregadas com sucesso! :^}")
 
@@ -145,19 +151,20 @@ class Game:
             print(f"\n--- Erro! ---")
             print(f"Erro: Não foi possível carregar as texturas: {e}")
             print("O jogo será carregado com texturas sólidas :^| .")
-            print("-------------------------------------------------\n")
-            
-            # Fallback para cores sólidas se algo der errado            
+            print("-------------------------------------------------\n")            
+       
             fallback_head = self._create_fallback_surface(HEAD_SIZE, COLOR_HEAD_FALLBACK)
             fallback_body = self._create_fallback_surface(BODY_SIZE, COLOR_BODY_FALLBACK)
             fallback_food = self._create_fallback_surface(FOOD_SIZE,COLOR_FOOD_FALLBACK)
-            
+            fallback_background = self._create_fallback_surface((SCREEN_WIDTH,SCREEN_HEIGHT),COLOR_BACKGROUND_FALLBACK)
+                        
             self.sprites['head']['horizontal'] = [fallback_head]
             self.sprites['head']['vertical'] = [fallback_head]
             self.sprites['body']['horizontal'] = [fallback_body]
             self.sprites['body']['vertical'] = [fallback_body]
             self.sprites['food'] = [fallback_food]
-            #self.food_img_original = self._create_fallback_surface(FOOD_SIZE, COLOR_FOOD_FALLBACK)
+            self.sprites['background'] = [fallback_background]
+
 
     def _create_fallback_surface(self, size, color):
         surface = pygame.Surface(size)
@@ -181,15 +188,14 @@ class Game:
     def _draw_score(self):
         score_text = f"Placar: {self.snake.score}"
         score_surf = self.score_font.render(score_text, True, COLOR_WHITE)
-        score_rect = score_surf.get_rect(center=(SCREEN_WIDTH // 2, 30))
+        score_rect = score_surf.get_rect(center=(SCREEN_WIDTH // 2, 20))
         self.screen.blit(score_surf, score_rect)
 
     def _draw_game_over_overlay(self):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150)) # Preto semi-transparente
         self.screen.blit(overlay, (0, 0))
-        
-        # Textos
+
         go_surf = self.game_over_font.render("VOCÊ PERDEU!", True, COLOR_WHITE)
         go_rect = go_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
         

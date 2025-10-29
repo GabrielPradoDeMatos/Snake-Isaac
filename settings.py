@@ -6,14 +6,22 @@ import os
 # --- 1. Configurações de Tela e Jogo ---
 SCREEN_WIDTH = 918
 SCREEN_HEIGHT = 612
+
+ARENA_WIDTH = 710
+ARENA_HEIGHT = 404
+
+ARENA_LEFT = (SCREEN_WIDTH - ARENA_WIDTH) // 2
+ARENA_RIGHT = ARENA_LEFT + ARENA_WIDTH
+ARENA_TOP = (SCREEN_HEIGHT - ARENA_HEIGHT) // 2
+ARENA_BOTTOM = ARENA_TOP + ARENA_HEIGHT
+
 FPS = 30
 SNAKE_SPEED = 8
 
 # --- 2. Configurações da Cobra ---
 HEAD_SIZE = (35, 38)
 BODY_SIZE = (27, 23)
-#HEAD_SIZE = (35, 35)
-#BODY_SIZE = (27, 22)
+
 HEAD_P = 0.75 # Percentual da cabeça para cooldown de curva
 BODY_SPACING = 4 # Espaçamento entre os segmentos do corpo
 
@@ -26,6 +34,7 @@ COLOR_WHITE = (150, 150, 150)
 COLOR_HEAD_FALLBACK = (0, 200, 0)
 COLOR_BODY_FALLBACK = (0, 150, 0)
 COLOR_FOOD_FALLBACK = (200, 0, 0)
+COLOR_BACKGROUND_FALLBACK = (0,0,0)
 
 
 
@@ -34,7 +43,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ASSET_PATH = os.path.join(SCRIPT_DIR, 'assets') 
 SPRITESHEET_FILENAME = 'snake_sprites.png'
-
+ARENA_FILENAME = 'Arena.png'
 
 # --- 6. NOVAS Configurações de Animação e Sprite ---
 

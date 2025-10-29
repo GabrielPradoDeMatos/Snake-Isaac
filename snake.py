@@ -5,15 +5,13 @@ import pygame
 from settings import *
 
 class Snake:
-    #Para iniciar a cobra é necessário passar o dicionário de sprites
     def __init__(self, sprites_dict):
-        self.sprites = sprites_dict
-                      
-        #original_head_img será usada para fazer a rotacão da cabeca pois, ao rotacionar uma surface ,já rotacionada, a qualidade da imagem diminui.
+        self.sprites = sprites_dict                      
+
         self.original_head_img = self.sprites['head']['horizontal'][0]
         self.body_img = self.sprites['body']['horizontal'][0]
         self.head_img = self.original_head_img
-
+        #rect representa a posicão da cabeca
         self.rect = self.head_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         #Guarda todo histórico de movimentacões da cobra, cada elemento dessa lista é uma dupla de tupla, a primeira armazena a posicão (X,Y) e a segunda armazena a direcão (X,Y)
         self.position_history = []
@@ -21,19 +19,16 @@ class Snake:
         self.body_rects = []
         
         #Vetores de direcão. No pygame o eixo Y é ao contrário e o 0° é no lugar do 90°, (0=Cima, 90=Esquerda, 180=Baixo, 270=Direita)
+        #Será utilizado ma movimentar o rect da cabeca da cobra
         self.DIR_RIGHT = pygame.math.Vector2(SNAKE_SPEED, 0)
         self.DIR_LEFT = pygame.math.Vector2(-SNAKE_SPEED, 0)
         self.DIR_UP = pygame.math.Vector2(0, -SNAKE_SPEED)
         self.DIR_DOWN = pygame.math.Vector2(0, SNAKE_SPEED)
         
-        #Início da cobra
+        #Início da cobra. Olhando para direita        
         self.direction = self.DIR_RIGHT
-        self.angle = 0
-        
-        
-
-        self.pending_direction = None
-        self.pending_angle = None        
+       
+        self.pending_direction = None    
         self.last_turn_position = self.rect.center
         self.last_direction = self.direction.copy()
         self.turn_cooldown_distance = HEAD_SIZE[0] * HEAD_P
@@ -69,8 +64,7 @@ class Snake:
         self._apply_turn()
 
         sprite_list, flip_h, flip_v = self._get_head_config()
-        print(self.position_history)
-        print(self.body_rects)
+        
         # 3. Define a imagem da cabeça (sprite + flip) #self.current_frame_index
         raw_head_sprite = sprite_list[0]
         self.head_img = pygame.transform.flip(raw_head_sprite, flip_h, flip_v)
@@ -119,13 +113,12 @@ class Snake:
         if can_turn:
             self.last_direction = self.direction.copy()
             self.direction = self.pending_direction
-            self.angle = self.pending_angle
-            
+
             self.last_turn_position = self.rect.center
         
         #Limpar o comando de virar mesmo que ele não tenha sido executado
         self.pending_direction = None
-        self.pending_angle = None
+
         
              
              
@@ -148,48 +141,20 @@ class Snake:
         elif direction == self.DIR_UP:
             return self.sprites['body']['vertical'], False, False
         elif direction == self.DIR_DOWN:
-            return self.sprites['body']['vertical'], False, True
-            
-    def update(self):
-
-        self._apply_turn()
-
-        sprite_list, flip_h, flip_v = self._get_head_config()
-        print(self.position_history)
-        print(self.body_rects)
-        # 3. Define a imagem da cabeça (sprite + flip) #self.current_frame_index
-        raw_head_sprite = sprite_list[0]
-        self.head_img = pygame.transform.flip(raw_head_sprite, flip_h, flip_v)
-        
-        # 4. Move a cobra (lógica original adaptada)
-        new_head_rect = self.head_img.get_rect(center=self.rect.center)
-        new_head_rect.move_ip(self.direction)
-        self.rect = new_head_rect        
-
-        # 5. Adiciona a (posição, direção) ao histórico
-        self.position_history.insert(0, (self.rect.center, self.direction.copy()))
-                
-        
-        # 4. Limita o tamanho do histórico com base no placar
-        max_history_len = (self.score + 2) * BODY_SPACING
-        if len(self.position_history) > max_history_len:
-            self.position_history.pop()
-            
-        # 5. (IMPORTANTE) Atualiza a lista de rects do corpo para colisões
-        self._update_body_rects()
-        
-
+            return self.sprites['body']['vertical'], False, True           
+     
 
     def grow(self):
         """Aumenta o placar (e consequentemente o corpo)."""
         self.score += 1
 
 
-
     def _update_body_rects(self):
         #Limpa a lista de body_rects, pois é mais facil criar uma nova lista do que movimentar todos os elementos da lista antiga
         self.body_rects.clear()
         #O tamanho do corpo da cobra é igual a quantidade de pontos, portanto para cada ponto eu preciso de um pedaço de corpo
+        #print(self.position_history)
+        
         for i in range(self.score):
             #Define qual será a possicao do corpo da cobra. (i + 1) garante que o primeiro pedaço do corpo nao fique colado na cabeca,
             #pois o index 0 da lista position_history é sempre a posicão atual da cabeca.
@@ -199,6 +164,7 @@ class Snake:
                 segment_pos, segment_dir = self.position_history[history_index]
                 body_rect = self.body_img.get_rect(center=segment_pos)
                 self.body_rects.append(body_rect)
+        #print(self.body_rects)
                 
 
     def draw_body(self, surface):
@@ -217,10 +183,10 @@ class Snake:
         return False
 
     def check_collision_wall(self):
-        return (self.rect.left < 0 or
-                self.rect.right > SCREEN_WIDTH or
-                self.rect.top < 0 or
-                self.rect.bottom > SCREEN_HEIGHT)
+        return (self.rect.left < ARENA_LEFT or
+                self.rect.right > ARENA_RIGHT or
+                self.rect.top < ARENA_TOP or
+                self.rect.bottom > ARENA_BOTTOM)
 
     def check_collision_self(self):
         # Pula os primeiros segmentos (para não colidir com o "pescoço")

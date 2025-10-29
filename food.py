@@ -2,8 +2,7 @@
 # Se sobrar tempo implementar a funcao de seed
 import pygame
 import random
-
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FOOD_SIZE
+from settings import *
 
 #Para iniciar a comida é necessário passar a textura da comida
 class Food:
@@ -19,14 +18,14 @@ class Food:
     #Gera a comida em um lugar aleatório no mapa
     def respawn(self):
         #Transformar isso em uma funcão
-        
         self.image = self.sprites['food'][random.randint(0,6)]
-        #A comida não deve aparecer nas bordas do mapa
-        margin_x = 30
-        margin_y = 60 # Margem maior no topo para o placar
         
-        rand_x = random.randint(margin_x, SCREEN_WIDTH - margin_x)
-        rand_y = random.randint(margin_y, SCREEN_HEIGHT - margin_x)
+        # Gera a comida DENTRO dos limites da arena
+        # Adiciona um pequeno "padding" (ex: 10 pixels) para não nascer colado na parede
+        padding = 10 
+        
+        rand_x = random.randint(ARENA_LEFT + padding, ARENA_RIGHT - padding)
+        rand_y = random.randint(ARENA_TOP + padding, ARENA_BOTTOM - padding)
         self.rect.center = (rand_x, rand_y)
 
     #Desenha a comida na tela
