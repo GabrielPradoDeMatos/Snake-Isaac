@@ -7,7 +7,17 @@ import json
 import os
 
 class Spritesheet:
-    def __init__(self, filename):
+    
+    filename: str
+    sprite_sheet: pygame.Surface
+    meta_data: str
+    data:dict[str,
+              dict[str,
+                   dict[str,int]]]   
+    
+    
+    
+    def __init__(self, filename: str):
         self.filename = filename
         try:
             #convert_alpha : otimiza a imagem para o formato da tela e preserva a transparência
@@ -28,7 +38,7 @@ class Spritesheet:
             print(f"Erro: O arquivo JSON não está em um formato adequado: {self.meta_data}")
             raise
 
-    def parse_sprite(self, name):
+    def parse_sprite(self, name: str) -> pygame.surface:
         try:
             #Recebe um dicionário com as informacoes, x,y,w,h da sprite solicitada         
             sprite_data = self.data['frames'][name]['frame']
@@ -43,9 +53,9 @@ class Spritesheet:
             print(f"Erro: Sprite com o nome '{name}' não encontrado no JSON ({self.meta_data}).")
             raise
 
-    def get_sprite(self, x, y, w, h):
+    def get_sprite(self, x: int, y: int, w: int, h: int) -> pygame.Surface:
         #Cria uma surface que suporta transparência
         sprite = pygame.Surface((w, h), pygame.SRCALPHA)
         #Argumento opcional do blit é Area = An optional area rectangle can be passed as well. This represents a smaller portion of the source Surface to draw.
-        sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h))
+        sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h)) 
         return sprite

@@ -7,12 +7,29 @@ import sys
 import os
 import json
 
+
 from settings import *
 from spritesheet import Spritesheet
 from snake import Snake
 from food import Food
 
 class Game:
+    
+    snake: Snake
+    food: Food
+    
+    screen: pygame.Surface
+    clock: pygame.time.Clock
+    
+    game_state: str
+    sprites: dict[str,
+                dict[str,
+                        list[pygame.Surface]]]
+    
+    score_font: pygame.font.Font
+    game_over_font: pygame.font.Font
+    restart_font: pygame.font.Font
+        
     def __init__(self):
         
         pygame.init()
@@ -21,8 +38,7 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         
-        pygame.display.set_caption("Snake - Isaac")
-        
+        pygame.display.set_caption("Snake - Isaac")        
 
         #Carregar as texturas, caso as texturas nao sejam carregadas serão subistituidas por cores sólidas que estão definidas no arquivo settings.py
         self._load_assets()
@@ -34,7 +50,7 @@ class Game:
         self._start_new_game()
         
     #Loop principal
-    def run(self):        
+    def run(self) -> None:        
         while True:
             # 1. Processar Eventos (Input)
             self._handle_events()
@@ -48,7 +64,7 @@ class Game:
             # 4. Controlar FPS, ou seja, esse loop é executado a cada (1/FPS)segundos, 
             self.clock.tick(FPS)
     
-    def _handle_events(self):
+    def _handle_events(self) -> None:
         #pygame.event.get() pega TODOS os evendos registrados desde a última vez que o comando pygame.event.get() foi chamado
         #ao chamar o o pygame.event.get() a fila de eventos que foi registrada é resetada
         for event in pygame.event.get():
@@ -62,7 +78,7 @@ class Game:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                     self._start_new_game()
 
-    def _update(self):       
+    def _update(self) -> None:       
         if self.game_state != "playing":
             return
                     
@@ -79,11 +95,9 @@ class Game:
             print("-------------------------------Game Over-------------------------------")
             self.game_state = "game_over"
     
-    def _draw(self):   
+    def _draw(self) -> None:   
 
-        self.screen.blit(self.sprites['background'][0], (0, 0)) 
-           
-        self.food.draw(self.screen)        
+        self.screen.blit(self.sprites['background']['background'][0], (0, 0)) 
 
         self.food.draw(self.screen)
         self.snake.draw_body(self.screen)
@@ -99,21 +113,21 @@ class Game:
         # 5. Atualiza o display
         pygame.display.flip()
 
-    def _quit_game(self):
+    def _quit_game(self) -> None:
         print("Encerrando o jogo...")
         pygame.quit()
         quit()             
 
-    def _load_assets(self):
+    def _load_assets(self) -> None:
         full_spritesheet_path = os.path.join(ASSET_PATH, SPRITESHEET_FILENAME)
         
         #Dicionário para armazenar as sprites
         self.sprites = {
             'head': {'horizontal': [], 'vertical': []},
             'body': {'horizontal': [], 'vertical': []},
-            'food': [],
-            'background':[],
-            'leftover': None
+            'food': {'food':[]},
+            'background':{'background':[]},
+            'leftover': {'leftover':[]}
         }
         
         try:
@@ -137,18 +151,18 @@ class Game:
                 self.sprites['body']['vertical'].append(pygame.transform.scale(sprite, BODY_SIZE))
             
             print("Extraindo sprite da comida...")
-            for name in FOOD_SPRITE_NAMES['tipe']:
+            for name in FOOD_SPRITE_NAMES['food']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['food'].append(pygame.transform.scale(sprite,FOOD_SIZE))            
+                self.sprites['food']['food'].append(pygame.transform.scale(sprite,FOOD_SIZE))            
                    
             print("Carregando cenário...")
             background_path = os.path.join(ASSET_PATH, ARENA_FILENAME)
-            self.sprites['background'].append(pygame.image.load(background_path).convert())
+            self.sprites['background']['background'].append(pygame.image.load(background_path).convert())
             
             print("Sprites carregadas com sucesso! :^}")
 
         except (pygame.error, FileNotFoundError, json.JSONDecodeError, KeyError, TypeError) as e:
-            print(f"\n--- Erro! ---")
+            print(f"--- Erro! ---")
             print(f"Erro: Não foi possível carregar as texturas: {e}")
             print("O jogo será carregado com texturas sólidas :^| .")
             print("-------------------------------------------------\n")            
@@ -162,22 +176,21 @@ class Game:
             self.sprites['head']['vertical'] = [fallback_head]
             self.sprites['body']['horizontal'] = [fallback_body]
             self.sprites['body']['vertical'] = [fallback_body]
-            self.sprites['food'] = [fallback_food]
-            self.sprites['background'] = [fallback_background]
+            self.sprites['food']['food'] = [fallback_food]
+            self.sprites['background']['background'] = [fallback_background]
 
-
-    def _create_fallback_surface(self, size, color):
+    def _create_fallback_surface(self, size: int, color: tuple[int,int,int]) -> pygame.Surface:
         surface = pygame.Surface(size)
         surface.fill(color)
         return surface
     
-    def _create_fonts(self):
+    def _create_fonts(self) -> None:
         #Carrega fontes do jogo (se der tempo vou adicionar as fontes do Isaac, por enquanto usar fontes padrão do pygame)
-        self.score_font = pygame.font.Font(None, 50)
-        self.game_over_font = pygame.font.Font(None, 75)
-        self.restart_font = pygame.font.Font(None, 40)
+        self.score_font = pygame.font.Font(None, SCORE_FONT_SIZE)
+        self.game_over_font = pygame.font.Font(None, GAME_OVER_FONT_SIZE)
+        self.restart_font = pygame.font.Font(None, RESTART_FONT_SIZE)
 
-    def _start_new_game(self):  
+    def _start_new_game(self) -> None:  
               
         print("Iniciando novo jogo...")
         
@@ -185,15 +198,16 @@ class Game:
         self.snake = Snake(self.sprites) 
         self.food = Food(self.sprites)
 
-    def _draw_score(self):
+    def _draw_score(self) -> None:
         score_text = f"Placar: {self.snake.score}"
+        #Para desenhar texto na tela é necessário criar uma surface com o texto
         score_surf = self.score_font.render(score_text, True, COLOR_WHITE)
         score_rect = score_surf.get_rect(center=(SCREEN_WIDTH // 2, 20))
         self.screen.blit(score_surf, score_rect)
 
-    def _draw_game_over_overlay(self):
+    def _draw_game_over_overlay(self) -> None:
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 150)) # Preto semi-transparente
+        overlay.fill((0, 0, 0, 150))
         self.screen.blit(overlay, (0, 0))
 
         go_surf = self.game_over_font.render("VOCÊ PERDEU!", True, COLOR_WHITE)

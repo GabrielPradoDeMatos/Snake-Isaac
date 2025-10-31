@@ -31,12 +31,16 @@ FOOD_SIZE = (27, 28)
 # --- 4. Cores (Usadas como fallback e para UI) ---
 COLOR_BLACK = (255, 255, 255)
 COLOR_WHITE = (150, 150, 150)
+
 COLOR_HEAD_FALLBACK = (0, 200, 0)
 COLOR_BODY_FALLBACK = (0, 150, 0)
 COLOR_FOOD_FALLBACK = (200, 0, 0)
 COLOR_BACKGROUND_FALLBACK = (0,0,0)
 
 
+SCORE_FONT_SIZE = 50
+GAME_OVER_FONT_SIZE = 75
+RESTART_FONT_SIZE = 40
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -63,9 +67,9 @@ BODY_SPRITE_NAMES = {
 }
 
 FOOD_SPRITE_NAMES = {
-    'tipe': ['food_1', 'food_2', 'food_3', 'food_4','food_5','food_6','food_7']  
+    'food': ['food_1', 'food_2', 'food_3', 'food_4','food_5','food_6','food_7']  
 }
 
 LEFTOVER_SPRITE_NAMES = {
-    'tipe': ['leftover_1', 'leftover_2', 'leftover_3', 'leftover_4','leftover_5','leftover_6','leftover_7']  
+    'leftover': ['leftover_1', 'leftover_2', 'leftover_3', 'leftover_4','leftover_5','leftover_6','leftover_7']  
 }

@@ -4,8 +4,41 @@
 import pygame
 from settings import *
 
+
 class Snake:
-    def __init__(self, sprites_dict):
+    
+    sprites: dict[str,
+                dict[str,
+                        list[pygame.Surface]]] 
+    
+    original_head_img: pygame.Surface
+    head_img: pygame.Surface
+    rect: pygame.Rect
+    position_history: list[
+                        tuple[
+                            tuple[int,int],
+                            pygame.math.Vector2]]
+     
+    body_rects: list[
+                    tuple[int,int]]  
+    
+    DIR_RIGHT: pygame.math.Vector2
+    DIR_LEFT: pygame.math.Vector2
+    DIR_UP: pygame.math.Vector2
+    DIR_DOWN: pygame.math.Vector2
+    
+    direction: pygame.math.Vector2
+    
+    pending_direction:pygame.math.Vector2    
+    last_turn_position = tuple[int,int]
+    last_direction: pygame.math.Vector2
+    turn_cooldown_distance: float    
+    score: int
+    
+    def __init__(self, sprites_dict: dict[str,
+                                          dict[str,
+                                               list[pygame.Surface]]]):
+        
         self.sprites = sprites_dict                      
 
         self.original_head_img = self.sprites['head']['horizontal'][0]
@@ -37,7 +70,7 @@ class Snake:
 
     #Após uma tecla ser pressionada o metodo verifica se é um movimento válido, caso seja, atribui a pending_direction a direcão da tecla pressionada
     #Essa direcão só será atualizada no metodo update
-    def handle_input(self, event):        
+    def handle_input(self, event: pygame.event.Event) -> None:        
         if event.type != pygame.KEYDOWN:
             return
            
@@ -59,7 +92,7 @@ class Snake:
             elif event.key == pygame.K_RIGHT and self.direction != self.DIR_LEFT:
                 self.pending_direction = self.DIR_RIGHT
 
-    def update(self):
+    def update(self) -> None:
 
         self._apply_turn()
 
@@ -86,7 +119,7 @@ class Snake:
         # 5. (IMPORTANTE) Atualiza a lista de rects do corpo para colisões
         self._update_body_rects()
         
-    def _apply_turn(self):
+    def _apply_turn(self) -> None:
         
         if self.pending_direction is None:
             return
@@ -118,12 +151,8 @@ class Snake:
         
         #Limpar o comando de virar mesmo que ele não tenha sido executado
         self.pending_direction = None
-
-        
              
-             
-             
-    def _get_head_config(self):
+    def _get_head_config(self) -> tuple[list[pygame.Surface], bool, bool]:
             if self.direction == self.DIR_RIGHT:
                 return self.sprites['head']['horizontal'], False, False
             elif self.direction == self.DIR_LEFT:
@@ -133,7 +162,7 @@ class Snake:
             elif self.direction == self.DIR_DOWN:
                 return self.sprites['head']['vertical'], False, True
             
-    def _get_body_config(self, direction):
+    def _get_body_config(self, direction) -> tuple[list[pygame.Surface], bool, bool]:
         if direction == self.DIR_RIGHT:
             return self.sprites['body']['horizontal'], False, False
         elif direction == self.DIR_LEFT:
@@ -142,14 +171,11 @@ class Snake:
             return self.sprites['body']['vertical'], False, False
         elif direction == self.DIR_DOWN:
             return self.sprites['body']['vertical'], False, True           
-     
-
-    def grow(self):
-        """Aumenta o placar (e consequentemente o corpo)."""
+    
+    def grow(self) -> None:
         self.score += 1
 
-
-    def _update_body_rects(self):
+    def _update_body_rects(self) -> None:
         #Limpa a lista de body_rects, pois é mais facil criar uma nova lista do que movimentar todos os elementos da lista antiga
         self.body_rects.clear()
         #O tamanho do corpo da cobra é igual a quantidade de pontos, portanto para cada ponto eu preciso de um pedaço de corpo
@@ -165,30 +191,29 @@ class Snake:
                 body_rect = self.body_img.get_rect(center=segment_pos)
                 self.body_rects.append(body_rect)
         #print(self.body_rects)
-                
-
-    def draw_body(self, surface):
+      
+    def draw_body(self, surface: pygame.Surface) -> None:
         """Desenha apenas o corpo na tela (usando os rects já calculados)."""
         for rect in self.body_rects:
             surface.blit(self.body_img, rect)
 
-    def draw_head(self, surface):
+    def draw_head(self, surface: pygame.Surface) -> None:
         """Desenha apenas a cabeça na tela (por cima do corpo)."""
         surface.blit(self.head_img, self.rect)
 
-    def check_collision_food(self, food_rect):
+    def check_collision_food(self, food_rect: pygame.Rect) -> bool:
         if self.rect.colliderect(food_rect):
             self.grow()
             return True
         return False
 
-    def check_collision_wall(self):
+    def check_collision_wall(self) -> bool:
         return (self.rect.left < ARENA_LEFT or
                 self.rect.right > ARENA_RIGHT or
                 self.rect.top < ARENA_TOP or
                 self.rect.bottom > ARENA_BOTTOM)
 
-    def check_collision_self(self):
+    def check_collision_self(self) -> bool:
         # Pula os primeiros segmentos (para não colidir com o "pescoço")
         ignore_segments = int(self.turn_cooldown_distance / SNAKE_SPEED) + 1 
         
