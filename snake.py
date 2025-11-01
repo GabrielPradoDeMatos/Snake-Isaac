@@ -13,6 +13,7 @@ class Snake:
     
     original_head_img: pygame.Surface
     head_img: pygame.Surface
+    body_imgs: list[pygame.Surface]
     rect: pygame.Rect
     position_history: list[
                         tuple[
@@ -35,6 +36,9 @@ class Snake:
     turn_cooldown_distance: float    
     score: int
     
+    animation_count_head: int
+    animation_count_body: int
+    
     def __init__(self, sprites_dict: dict[str,
                                           dict[str,
                                                list[pygame.Surface]]]):
@@ -42,7 +46,9 @@ class Snake:
         self.sprites = sprites_dict                      
 
         self.original_head_img = self.sprites['head']['horizontal'][0]
-        self.body_img = self.sprites['body']['horizontal'][0]
+        self.body_imgs = []
+        self.animation_count_body = 0
+        self.animation_count_head = 0
         self.head_img = self.original_head_img
         #rect representa a posicão da cabeca
         self.rect = self.head_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -99,8 +105,10 @@ class Snake:
         sprite_list, flip_h, flip_v = self._get_head_config()
         
         # 3. Define a imagem da cabeça (sprite + flip) #self.current_frame_index
-        raw_head_sprite = sprite_list[0]
-        self.head_img = pygame.transform.flip(raw_head_sprite, flip_h, flip_v)
+        #Chamar a funcao para definir a sprite
+        self._update_head_sprite()
+        #raw_head_sprite = sprite_list[0]
+        #self.head_img = pygame.transform.flip(raw_head_sprite, flip_h, flip_v)
         
         # 4. Move a cobra (lógica original adaptada)
         new_head_rect = self.head_img.get_rect(center=self.rect.center)
@@ -116,8 +124,41 @@ class Snake:
         if len(self.position_history) > max_history_len:
             self.position_history.pop()
             
-        # 5. (IMPORTANTE) Atualiza a lista de rects do corpo para colisões
+               
+        #Chamar a funcao para definir a sprite        
+        #self._update_body_sprite()
+        #Pegar a nova posicao do corpo
         self._update_body_rects()
+        
+        #Essa funcão vai atualizar o self.head_img
+   
+    def _update_head_sprite(self) -> None:
+        sprite_list, flip_h, flip_v = self._get_head_config()
+        sprite_index = (self.animation_count_head // ANIMATION_DELAY_HEAD) % len(sprite_list)
+        self.head_img = pygame.transform.flip(sprite_list[sprite_index],flip_h,flip_v)
+        self.animation_count_head += 1
+
+    def _update_body_sprite(self, update_animation_count:bool, direction: pygame.math.Vector2,initial_index: int) -> pygame.Surface:   
+        
+        sprite_list,_,_ = self._get_body_config(direction)
+        
+        initial_sprite = initial_index % len(sprite_list)
+        #Mudar a cada ANIMATION_DELAY_BODY frames o index da lista     
+              
+        if update_animation_count and (direction == self.DIR_UP or direction == self.DIR_DOWN):
+            self.animation_count_body += 1
+            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY)) % SNAKE_LAST_SPRITE_VERTICAL_QTD            
+        elif not(update_animation_count) and (direction == self.DIR_UP or direction == self.DIR_DOWN):
+            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY) + initial_sprite) % len(sprite_list)
+            if sprite_index == 0 or sprite_index == 1:
+                sprite_index += SNAKE_LAST_SPRITE_VERTICAL_QTD
+        elif update_animation_count:
+            self.animation_count_body += 1
+            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY) + initial_sprite) % len(sprite_list)  
+        else:
+            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY) + initial_sprite) % len(sprite_list)  
+            
+        return sprite_list[sprite_index]    
         
     def _apply_turn(self) -> None:
         
@@ -162,7 +203,7 @@ class Snake:
             elif self.direction == self.DIR_DOWN:
                 return self.sprites['head']['vertical'], False, True
             
-    def _get_body_config(self, direction) -> tuple[list[pygame.Surface], bool, bool]:
+    def _get_body_config(self, direction: pygame.math.Vector2) -> tuple[list[pygame.Surface], bool, bool]:
         if direction == self.DIR_RIGHT:
             return self.sprites['body']['horizontal'], False, False
         elif direction == self.DIR_LEFT:
@@ -178,6 +219,8 @@ class Snake:
     def _update_body_rects(self) -> None:
         #Limpa a lista de body_rects, pois é mais facil criar uma nova lista do que movimentar todos os elementos da lista antiga
         self.body_rects.clear()
+        self.body_imgs.clear()
+        update_animation_count = False
         #O tamanho do corpo da cobra é igual a quantidade de pontos, portanto para cada ponto eu preciso de um pedaço de corpo
         #print(self.position_history)
         
@@ -188,14 +231,33 @@ class Snake:
             history_index = (i + 1) * BODY_SPACING
             if history_index < len(self.position_history):
                 segment_pos, segment_dir = self.position_history[history_index]
-                body_rect = self.body_img.get_rect(center=segment_pos)
+                #body_sprites, _, _ = self._get_body_config(segment_dir)
+                #Tendo a direcao do segmento do corpo eu posso charmar o_ get_body_config
+                #Para ter a lista com todas as sprites que eu posso usar no segmento
+                
+                if i == self.score - 1:
+                    update_animation_count = True
+                
+                self.body_imgs.append(self._update_body_sprite(update_animation_count,segment_dir,i))
+                #print(f"{sprite_index}, {len(body_sprites)}")
+                #Fazer o esquema de calculo usando o history_index para
+                #definir a sprite que vou usar no segmento
+                #Calculo: history_index % (comprimento da lista)
+                #Quero que fique intercalando entre cada parte do segmento
+                #O ultimo segmento tem quer ter a bundinha
+                #print(f"Esse é dentro da funcao {len(self.body_imgs)}")
+                
+                #self.body_imgs.append(body_sprites[sprite_index])
+                #Cada segmento terá sempre a mesma sprite, agr so implementar uma funcao de altere essa sprite
+                body_rect = self.body_imgs[i].get_rect(center=segment_pos)                
                 self.body_rects.append(body_rect)
-        #print(self.body_rects)
+      
       
     def draw_body(self, surface: pygame.Surface) -> None:
         """Desenha apenas o corpo na tela (usando os rects já calculados)."""
-        for rect in self.body_rects:
-            surface.blit(self.body_img, rect)
+        for i in range(len(self.body_rects)):          
+            surface.blit(self.body_imgs[i], self.body_rects[i])
+            
 
     def draw_head(self, surface: pygame.Surface) -> None:
         """Desenha apenas a cabeça na tela (por cima do corpo)."""

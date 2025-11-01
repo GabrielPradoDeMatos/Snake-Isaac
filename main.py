@@ -159,7 +159,7 @@ class Game:
             background_path = os.path.join(ASSET_PATH, ARENA_FILENAME)
             self.sprites['background']['background'].append(pygame.image.load(background_path).convert())
             
-            print("Sprites carregadas com sucesso! :^}")
+            print("Sprites carregadas com sucesso! :^}\n")
 
         except (pygame.error, FileNotFoundError, json.JSONDecodeError, KeyError, TypeError) as e:
             print(f"--- Erro! ---")
@@ -185,11 +185,21 @@ class Game:
         return surface
     
     def _create_fonts(self) -> None:
-        #Carrega fontes do jogo (se der tempo vou adicionar as fontes do Isaac, por enquanto usar fontes padrão do pygame)
-        self.score_font = pygame.font.Font(None, SCORE_FONT_SIZE)
-        self.game_over_font = pygame.font.Font(None, GAME_OVER_FONT_SIZE)
-        self.restart_font = pygame.font.Font(None, RESTART_FONT_SIZE)
-
+        try:
+            self.score_font = pygame.font.Font(MAIN_FONT_PATH, SCORE_FONT_SIZE)
+            self.game_over_font = pygame.font.Font(MAIN_FONT_PATH, GAME_OVER_FONT_SIZE)
+            self.restart_font = pygame.font.Font(MAIN_FONT_PATH, RESTART_FONT_SIZE)
+        except(FileNotFoundError) as e:
+            
+            print(f"--- Erro! ---")
+            print(f"Erro: Não foi possível carregar as fontes: {e}")
+            print("O jogo será carregado com fontes padrão :^| .")
+            print("-------------------------------------------------\n") 
+               
+            self.score_font = pygame.font.Font(None, SCORE_FONT_SIZE)
+            self.game_over_font = pygame.font.Font(None, GAME_OVER_FONT_SIZE)
+            self.restart_font = pygame.font.Font(None, RESTART_FONT_SIZE)
+        
     def _start_new_game(self) -> None:  
               
         print("Iniciando novo jogo...")

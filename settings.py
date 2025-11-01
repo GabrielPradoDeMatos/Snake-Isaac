@@ -14,7 +14,8 @@ ARENA_LEFT = (SCREEN_WIDTH - ARENA_WIDTH) // 2
 ARENA_RIGHT = ARENA_LEFT + ARENA_WIDTH
 ARENA_TOP = (SCREEN_HEIGHT - ARENA_HEIGHT) // 2
 ARENA_BOTTOM = ARENA_TOP + ARENA_HEIGHT
-
+#30
+#8
 FPS = 30
 SNAKE_SPEED = 8
 
@@ -45,20 +46,27 @@ RESTART_FONT_SIZE = 40
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-ASSET_PATH = os.path.join(SCRIPT_DIR, 'assets') 
-SPRITESHEET_FILENAME = 'snake_sprites.png'
-ARENA_FILENAME = 'Arena.png'
 
+ASSET_PATH = os.path.join(SCRIPT_DIR, "assets") 
+SPRITESHEET_FILENAME = "snake_sprites.png"
+ARENA_FILENAME = "Arena.png"
+
+MAIN_GAME_FONT = "upheavtt.ttf"
+MAIN_FONT_PATH = os.path.join(ASSET_PATH,MAIN_GAME_FONT)
 # --- 6. NOVAS Configurações de Animação e Sprite ---
 
 # Velocidade da animação (mudar de frame a cada X ticks do jogo)
-ANIMATION_SPEED = 10000000000000000 
+ANIMATION_DELAY_HEAD = 4
+ANIMATION_DELAY_BODY = 4
 
 # Nomes das sprites como estão no seu snake_sprites.json
 # Adicione ou remova nomes aqui conforme sua spritesheet crescer
+
+SNAKE_LAST_SPRITE_VERTICAL_QTD = 2
+
 HEAD_SPRITE_NAMES = {
-    'horizontal': ['head_h_1', 'head_h_2'],
-    'vertical':   ['head_v_1', 'head_v_2']
+    'horizontal': ["head_h_1", "head_h_2"],
+    'vertical':   ["head_v_1", "head_v_2"]
 }
 
 BODY_SPRITE_NAMES = {
