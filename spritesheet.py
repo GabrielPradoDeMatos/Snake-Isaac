@@ -1,7 +1,3 @@
-# spritesheet.py
-# Classe responsável por carregar e analisar a spritesheet.
-#Atributo sprite_sheet armazena a imagem completa do arquivo snake_sprites, depois tem que quebrar pra pegar individual
-
 import pygame
 import json
 import os
@@ -19,18 +15,17 @@ class Spritesheet:
     
     def __init__(self, filename: str):
         self.filename = filename
-        try:
-            #convert_alpha : otimiza a imagem para o formato da tela e preserva a transparência
-            self.sprite_sheet = pygame.image.load(filename).convert_alpha()
+        try:            
+            self.sprite_sheet = pygame.image.load(filename).convert_alpha() #convert_alpha : otimiza a imagem para o formato da tela e preserva a transparência
         except pygame.error as e:
             print(f"Erro, {e} ,ao carregar a imagem da spritesheet: {filename}")
             raise e
-        #Pegar os dados do arquivo JSON para mapear as texturas
-        self.meta_data = self.filename.replace('.png', '.json')
+        
+        self.meta_data = self.filename.replace('.png', '.json') #Pegar os dados do arquivo JSON para mapear as texturas
+        
         try:
-            with open(self.meta_data) as f:
-                #Atributo data recebe um dicionário de dicionários com as informacoes do JSON
-                self.data = json.load(f)
+            with open(self.meta_data) as f:                
+                self.data = json.load(f) #Atributo data recebe um dicionário de dicionários com as informacoes do JSON
         except FileNotFoundError:
             print(f"Erro: Não foi encontrado o arquivo JSON: {self.meta_data}")
             raise
@@ -38,24 +33,21 @@ class Spritesheet:
             print(f"Erro: O arquivo JSON não está em um formato adequado: {self.meta_data}")
             raise
 
-    def parse_sprite(self, name: str) -> pygame.surface:
-        try:
-            #Recebe um dicionário com as informacoes, x,y,w,h da sprite solicitada         
-            sprite_data = self.data['frames'][name]['frame']
+    def parse_sprite(self, name: str) -> pygame.Surface:
+        try:                    
+            sprite_data = self.data['frames'][name]['frame'] #Recebe um dicionário com as informacoes, x,y,w,h da sprite solicitada 
             x = sprite_data["x"]
             y = sprite_data["y"]
             w = sprite_data["w"]
             h = sprite_data["h"]
-            #Agora, possuindo a localizacao da sprite solicitada posso extrair a imagem
+
             image = self.get_sprite(x, y, w, h)
             return image
         except KeyError:
             print(f"Erro: Sprite com o nome '{name}' não encontrado no JSON ({self.meta_data}).")
             raise
 
-    def get_sprite(self, x: int, y: int, w: int, h: int) -> pygame.Surface:
-        #Cria uma surface que suporta transparência
-        sprite = pygame.Surface((w, h), pygame.SRCALPHA)
-        #Argumento opcional do blit é Area = An optional area rectangle can be passed as well. This represents a smaller portion of the source Surface to draw.
-        sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h)) 
+    def get_sprite(self, x: int, y: int, w: int, h: int) -> pygame.Surface:        
+        sprite = pygame.Surface((w, h), pygame.SRCALPHA) #Cria uma surface que suporta transparência        
+        sprite.blit(self.sprite_sheet, (0, 0), (x, y, w, h)) #Argumento opcional do blit é Area = An optional area rectangle can be passed as well. This represents a smaller portion of the source Surface to draw.
         return sprite

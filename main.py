@@ -6,7 +6,7 @@ import pygame
 import sys
 import os
 import json
-
+import time
 
 from settings import *
 from spritesheet import Spritesheet
@@ -22,9 +22,7 @@ class Game:
     clock: pygame.time.Clock
     
     game_state: str
-    sprites: dict[str,
-                dict[str,
-                        list[pygame.Surface]]]
+    sprites: dict[str, any]
     
     score_font: pygame.font.Font
     game_over_font: pygame.font.Font
@@ -40,29 +38,58 @@ class Game:
         
         pygame.display.set_caption("Snake - Isaac")        
 
-        #Carregar as texturas, caso as texturas nao sejam carregadas serão subistituidas por cores sólidas que estão definidas no arquivo settings.py
         self._load_assets()
         self._create_fonts()
         
         self.game_state = "playing"
 
-        #Cria os objetos do jogo
-        self._start_new_game()
+        self._start_new_game()        
         
-    #Loop principal
-    def run(self) -> None:        
-        while True:
-            # 1. Processar Eventos (Input)
+        self.debug_event_time = 0.0
+        self.debug_update_time = 0.0
+        self.debug_draw_time = 0.0
+        self.debug_frame_count = 0
+    
+    def run(self) -> None: 
+               
+        while True:            
+
+            start_time = time.perf_counter()
+
             self._handle_events()
-            
-            # 2. Atualizar Lógica do Jogo
+
+            time_after_events = time.perf_counter()
+
             self._update()
-            
-            # 3. Desenhar na Tela
+
+            time_after_update = time.perf_counter()
+
             self._draw()
-            
-            # 4. Controlar FPS, ou seja, esse loop é executado a cada (1/FPS)segundos, 
+
+            time_after_draw = time.perf_counter()
+
             self.clock.tick(FPS)
+
+            self.debug_event_time += (time_after_events - start_time)
+            self.debug_update_time += (time_after_update - time_after_events)
+            self.debug_draw_time += (time_after_draw - time_after_update)
+            self.debug_frame_count += 1
+
+            if self.debug_frame_count >= FPS:
+                avg_event = (self.debug_event_time / self.debug_frame_count) * 1000
+                avg_update = (self.debug_update_time / self.debug_frame_count) * 1000
+                avg_draw = (self.debug_draw_time / self.debug_frame_count) * 1000
+
+                print(f"--- Média de Tempo (últimos {self.debug_frame_count} frames) ---")
+                print(f"Eventos: {avg_event:.4f} ms")
+                print(f"Update:  {avg_update:.4f} ms")
+                print(f"Draw:    {avg_draw:.4f} ms")
+                print("---------------------------------")
+
+                self.debug_event_time = 0.0
+                self.debug_update_time = 0.0
+                self.debug_draw_time = 0.0
+                self.debug_frame_count = 0
     
     def _handle_events(self) -> None:
         #pygame.event.get() pega TODOS os evendos registrados desde a última vez que o comando pygame.event.get() foi chamado
@@ -78,18 +105,16 @@ class Game:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                     self._start_new_game()
 
-    def _update(self) -> None:       
+    def _update(self) -> None:      
+         
         if self.game_state != "playing":
             return
                     
         self.snake.update()
-        
-        #Verifica colisão da cobra com a comida
+
         if self.snake.check_collision_food(self.food.rect):
-            #Se comer a comida muda de lugar
             self.food.respawn() 
-            
-        #Verifica colisões de fim de jogo
+
         if self.snake.check_collision_wall() or self.snake.check_collision_self():
             print("---------------------------Colisão detectada!---------------------------")
             print("-------------------------------Game Over-------------------------------")
@@ -97,20 +122,17 @@ class Game:
     
     def _draw(self) -> None:   
 
-        self.screen.blit(self.sprites['background']['background'][0], (0, 0)) 
+        self.screen.blit(self.sprites['background'][0], (0, 0)) 
 
         self.food.draw(self.screen)
         self.snake.draw_body(self.screen)
         self.snake.draw_head(self.screen)
-        
-        #Desenha o placar
+
         self._draw_score()
-        
-        # 4. Desenha a tela de Game Over (se aplicável)
+
         if self.game_state == "game_over":
             self._draw_game_over_overlay()
 
-        # 5. Atualiza o display
         pygame.display.flip()
 
     def _quit_game(self) -> None:
@@ -119,15 +141,16 @@ class Game:
         quit()             
 
     def _load_assets(self) -> None:
+        
         full_spritesheet_path = os.path.join(ASSET_PATH, SPRITESHEET_FILENAME)
         
         #Dicionário para armazenar as sprites
         self.sprites = {
             'head': {'horizontal': [], 'vertical': []},
             'body': {'horizontal': [], 'vertical': []},
-            'food': {'food':[]},
-            'background':{'background':[]},
-            'leftover': {'leftover':[]}
+            'food': [],
+            'background':[],
+            'leftover': []
         }
         
         try:
@@ -137,27 +160,27 @@ class Game:
             print("Extraindo sprites da cabeça da cobra, lá ele...")
             for name in HEAD_SPRITE_NAMES['horizontal']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['head']['horizontal'].append(pygame.transform.scale(sprite, HEAD_SIZE))
+                self.sprites['head']['horizontal'].append(sprite) #self.sprites['head']['horizontal'].append(pygame.transform.scale(sprite, HEAD_SIZE))
             for name in HEAD_SPRITE_NAMES['vertical']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['head']['vertical'].append(pygame.transform.scale(sprite, HEAD_SIZE))
+                self.sprites['head']['vertical'].append(sprite)
 
             print("Extraindo sprites da cobra (corpo)...")
             for name in BODY_SPRITE_NAMES['horizontal']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['body']['horizontal'].append(pygame.transform.scale(sprite, BODY_SIZE))
+                self.sprites['body']['horizontal'].append(sprite)
             for name in BODY_SPRITE_NAMES['vertical']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['body']['vertical'].append(pygame.transform.scale(sprite, BODY_SIZE))
+                self.sprites['body']['vertical'].append(sprite)
             
             print("Extraindo sprite da comida...")
             for name in FOOD_SPRITE_NAMES['food']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['food']['food'].append(pygame.transform.scale(sprite,FOOD_SIZE))            
+                self.sprites['food'].append(sprite)          
                    
             print("Carregando cenário...")
             background_path = os.path.join(ASSET_PATH, ARENA_FILENAME)
-            self.sprites['background']['background'].append(pygame.image.load(background_path).convert())
+            self.sprites['background'].append(pygame.image.load(background_path).convert())
             
             print("Sprites carregadas com sucesso! :^}\n")
 
@@ -176,8 +199,8 @@ class Game:
             self.sprites['head']['vertical'] = [fallback_head]
             self.sprites['body']['horizontal'] = [fallback_body]
             self.sprites['body']['vertical'] = [fallback_body]
-            self.sprites['food']['food'] = [fallback_food]
-            self.sprites['background']['background'] = [fallback_background]
+            self.sprites['food'] = [fallback_food]
+            self.sprites['background'] = [fallback_background]
 
     def _create_fallback_surface(self, size: int, color: tuple[int,int,int]) -> pygame.Surface:
         surface = pygame.Surface(size)
@@ -202,39 +225,33 @@ class Game:
         
     def _start_new_game(self) -> None:  
               
-        print("Iniciando novo jogo...")
+        print("Iniciando novo jogo...\n")
         
         self.game_state = "playing"        
         self.snake = Snake(self.sprites) 
         self.food = Food(self.sprites)
 
     def _draw_score(self) -> None:
-        score_text = f"Placar: {self.snake.score}"
-        #Para desenhar texto na tela é necessário criar uma surface com o texto
-        score_surf = self.score_font.render(score_text, True, COLOR_WHITE)
-        score_rect = score_surf.get_rect(center=(SCREEN_WIDTH // 2, 20))
+        score_text = f"Placar: {self.snake.score}"        
+        score_surf = self.score_font.render(score_text, True, COLOR_WHITE) #Para desenhar texto na tela é necessário criar uma surface com o texto
+        score_rect = score_surf.get_rect(center=(SCORE_X_POSITION, SCORE_Y_POSITION))
         self.screen.blit(score_surf, score_rect)
 
     def _draw_game_over_overlay(self) -> None:
+        
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         self.screen.blit(overlay, (0, 0))
 
-        go_surf = self.game_over_font.render("VOCÊ PERDEU!", True, COLOR_WHITE)
-        go_rect = go_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
+        go_surf = self.game_over_font.render(MENSAGE_GO, True, COLOR_WHITE)
+        go_rect = go_surf.get_rect(center=(MENSAGE_GO_X_POSITION, MENSAGE_GO_Y_POSITION))
         
-        restart_surf = self.restart_font.render("Pressione [R] para reiniciar", True, COLOR_WHITE)
-        restart_rect = restart_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+        restart_surf = self.restart_font.render(MENSAGE_RESTART, True, COLOR_WHITE)
+        restart_rect = restart_surf.get_rect(center=(MENSAGE_RESTART_X_POSITION, MENSAGE_RESTART_Y_POSITION))
         
         self.screen.blit(go_surf, go_rect)
         self.screen.blit(restart_surf, restart_rect)
 
-
-
-
-# --- Ponto de Entrada do Programa ---
-if __name__ == "__main__":
-    # 1. Cria uma instância do Jogo
-    game = Game()
-    # 2. Inicia o loop principal
+if __name__ == "__main__": # __name__ == "__main__" quando o arquivo main.py é executado diretamente    
+    game = Game()   
     game.run()

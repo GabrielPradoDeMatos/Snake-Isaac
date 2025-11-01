@@ -1,15 +1,9 @@
-# snake.py
-# Classe que representa a Cobra lá ele
-
 import pygame
 from settings import *
 
-
 class Snake:
     
-    sprites: dict[str,
-                dict[str,
-                        list[pygame.Surface]]] 
+    sprites: dict[str,any] 
     
     original_head_img: pygame.Surface
     head_img: pygame.Surface
@@ -21,8 +15,8 @@ class Snake:
                             pygame.math.Vector2]]
      
     body_rects: list[
-                    tuple[int,int]]  
-    
+                    pygame.Rect]  
+
     DIR_RIGHT: pygame.math.Vector2
     DIR_LEFT: pygame.math.Vector2
     DIR_UP: pygame.math.Vector2
@@ -30,8 +24,8 @@ class Snake:
     
     direction: pygame.math.Vector2
     
-    pending_direction:pygame.math.Vector2    
-    last_turn_position = tuple[int,int]
+    pending_direction: pygame.math.Vector2 | None    
+    last_turn_position: tuple[int,int]
     last_direction: pygame.math.Vector2
     turn_cooldown_distance: float    
     score: int
@@ -49,13 +43,10 @@ class Snake:
         self.body_imgs = []
         self.animation_count_body = 0
         self.animation_count_head = 0
-        self.head_img = self.original_head_img
-        #rect representa a posicão da cabeca
-        self.rect = self.head_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-        #Guarda todo histórico de movimentacões da cobra, cada elemento dessa lista é uma dupla de tupla, a primeira armazena a posicão (X,Y) e a segunda armazena a direcão (X,Y)
-        self.position_history = []
-        #Guarda a posicão atual de todas as partes do corpo
-        self.body_rects = []
+        self.head_img = self.original_head_img        
+        self.rect = self.head_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)) #rect representa a posicão atual da cabeca        
+        self.position_history = [] #Guarda todo histórico de movimentacões da cobra, cada elemento dessa lista é uma dupla de tupla, a primeira armazena a posicão (X,Y) e a segunda armazena a direcão (X,Y)
+        self.body_rects = [] #Guarda a posicão atual de todas as partes do corpo
         
         #Vetores de direcão. No pygame o eixo Y é ao contrário e o 0° é no lugar do 90°, (0=Cima, 90=Esquerda, 180=Baixo, 270=Direita)
         #Será utilizado ma movimentar o rect da cabeca da cobra
@@ -63,14 +54,13 @@ class Snake:
         self.DIR_LEFT = pygame.math.Vector2(-SNAKE_SPEED, 0)
         self.DIR_UP = pygame.math.Vector2(0, -SNAKE_SPEED)
         self.DIR_DOWN = pygame.math.Vector2(0, SNAKE_SPEED)
-        
-        #Início da cobra. Olhando para direita        
+       
         self.direction = self.DIR_RIGHT
        
         self.pending_direction = None    
         self.last_turn_position = self.rect.center
         self.last_direction = self.direction.copy()
-        self.turn_cooldown_distance = HEAD_SIZE[0] * HEAD_P
+        self.turn_cooldown_distance = self.rect.width * HEAD_P #HEAD_SIZE[0] * HEAD_P
        
         self.score = 0
 
@@ -101,8 +91,10 @@ class Snake:
     def update(self) -> None:
 
         self._apply_turn()
+        self.animation_count_head += 1
+        self.animation_count_body += 1
 
-        sprite_list, flip_h, flip_v = self._get_head_config()
+        #sprite_list, flip_h, flip_v = self._get_head_config()
         
         # 3. Define a imagem da cabeça (sprite + flip) #self.current_frame_index
         #Chamar a funcao para definir a sprite
@@ -128,38 +120,16 @@ class Snake:
         #Chamar a funcao para definir a sprite        
         #self._update_body_sprite()
         #Pegar a nova posicao do corpo
-        self._update_body_rects()
+        self._update_body_rects_and_sprites()
         
         #Essa funcão vai atualizar o self.head_img
    
     def _update_head_sprite(self) -> None:
+        
         sprite_list, flip_h, flip_v = self._get_head_config()
         sprite_index = (self.animation_count_head // ANIMATION_DELAY_HEAD) % len(sprite_list)
-        self.head_img = pygame.transform.flip(sprite_list[sprite_index],flip_h,flip_v)
-        self.animation_count_head += 1
-
-    def _update_body_sprite(self, update_animation_count:bool, direction: pygame.math.Vector2,initial_index: int) -> pygame.Surface:   
-        
-        sprite_list,_,_ = self._get_body_config(direction)
-        
-        initial_sprite = initial_index % len(sprite_list)
-        #Mudar a cada ANIMATION_DELAY_BODY frames o index da lista     
-              
-        if update_animation_count and (direction == self.DIR_UP or direction == self.DIR_DOWN):
-            self.animation_count_body += 1
-            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY)) % SNAKE_LAST_SPRITE_VERTICAL_QTD            
-        elif not(update_animation_count) and (direction == self.DIR_UP or direction == self.DIR_DOWN):
-            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY) + initial_sprite) % len(sprite_list)
-            if sprite_index == 0 or sprite_index == 1:
-                sprite_index += SNAKE_LAST_SPRITE_VERTICAL_QTD
-        elif update_animation_count:
-            self.animation_count_body += 1
-            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY) + initial_sprite) % len(sprite_list)  
-        else:
-            sprite_index = ((self.animation_count_body // ANIMATION_DELAY_BODY) + initial_sprite) % len(sprite_list)  
-            
-        return sprite_list[sprite_index]    
-        
+        self.head_img = pygame.transform.flip(sprite_list[sprite_index],flip_h,flip_v)        
+    
     def _apply_turn(self) -> None:
         
         if self.pending_direction is None:
@@ -216,49 +186,72 @@ class Snake:
     def grow(self) -> None:
         self.score += 1
 
-    def _update_body_rects(self) -> None:
-        #Limpa a lista de body_rects, pois é mais facil criar uma nova lista do que movimentar todos os elementos da lista antiga
+    def _update_body_rects_and_sprites(self) -> None:
+        """
+        Atualiza a lista de retângulos (para colisão) e de imagens (para desenho)
+        de cada segmento do corpo, aplicando a lógica de animação.
+        """
         self.body_rects.clear()
         self.body_imgs.clear()
-        update_animation_count = False
-        #O tamanho do corpo da cobra é igual a quantidade de pontos, portanto para cada ponto eu preciso de um pedaço de corpo
-        #print(self.position_history)
-        
+
+        # 1. Pega o frame de animação atual baseado no TEMPO (Req 3)
+        # Este é o "deslocamento de tempo"
+        time_frame_index = (self.animation_count_body // ANIMATION_DELAY_BODY)
+
         for i in range(self.score):
-            #Define qual será a possicao do corpo da cobra. (i + 1) garante que o primeiro pedaço do corpo nao fique colado na cabeca,
-            #pois o index 0 da lista position_history é sempre a posicão atual da cabeca.
-            #multiplicar pelo BODY_SPACING é importante para nao ter sobreposicão, significa pegar um "delay" de BODY_SPACING posicões
-            history_index = (i + 1) * BODY_SPACING
+            history_index = (i + 1) * BODY_SPACING        
             if history_index < len(self.position_history):
+                
+                # Pega a posição E A DIREÇÃO REAL do segmento
                 segment_pos, segment_dir = self.position_history[history_index]
-                #body_sprites, _, _ = self._get_body_config(segment_dir)
-                #Tendo a direcao do segmento do corpo eu posso charmar o_ get_body_config
-                #Para ter a lista com todas as sprites que eu posso usar no segmento
                 
-                if i == self.score - 1:
-                    update_animation_count = True
+                # 2. Pega a config de sprite (lista E flips) CORRETA para ESSA direção
+                # Esta é a correção crucial. Chamamos _get_body_config UMA VEZ.
+                list_to_use, flip_h, flip_v = self._get_body_config(segment_dir)
+
+                is_vertical = (segment_dir == self.DIR_UP or segment_dir == self.DIR_DOWN)
+                is_tail = (i == self.score - 1) # É o último segmento
+
+                # 3. LÓGICA DE SELEÇÃO DE SPRITE (Req 2)
+                # Agora só precisamos nos preocupar com o caso vertical
+                # 'list_to_use' já contém os sprites corretos (horizontais ou verticais)
+                if is_vertical and is_tail:
+                    # Caso 1: É a cauda E está na vertical
+                    # Usa SOMENTE os sprites da cauda (os N primeiros da lista vertical)
+                    list_to_use = list_to_use[:BODY_VERTICAL_TAIL_COUNT]
                 
-                self.body_imgs.append(self._update_body_sprite(update_animation_count,segment_dir,i))
-                #print(f"{sprite_index}, {len(body_sprites)}")
-                #Fazer o esquema de calculo usando o history_index para
-                #definir a sprite que vou usar no segmento
-                #Calculo: history_index % (comprimento da lista)
-                #Quero que fique intercalando entre cada parte do segmento
-                #O ultimo segmento tem quer ter a bundinha
-                #print(f"Esse é dentro da funcao {len(self.body_imgs)}")
+                elif is_vertical:
+                    # Caso 2: É um segmento do corpo E está na vertical
+                    # Usa SOMENTE os sprites do corpo (o RESTANTE da lista vertical)
+                    list_to_use = list_to_use[BODY_VERTICAL_TAIL_COUNT:]
                 
-                #self.body_imgs.append(body_sprites[sprite_index])
-                #Cada segmento terá sempre a mesma sprite, agr so implementar uma funcao de altere essa sprite
-                body_rect = self.body_imgs[i].get_rect(center=segment_pos)                
-                self.body_rects.append(body_rect)
-      
-      
+                # (Se for horizontal, 'list_to_use' já está correta e completa)
+
+                # 4. CÁLCULO FINAL DO FRAME (Req 1)
+                # Segurança: se a lista estiver vazia (ex: erro no settings.py), pula este segmento
+                if not list_to_use: 
+                    continue 
+
+                # 4a. Pega o frame baseado na POSIÇÃO (Alternância)
+                spatial_frame_index = i % len(list_to_use)
+                
+                # 4b. Combina com o frame de TEMPO (Animação)
+                sprite_index = (time_frame_index + spatial_frame_index) % len(list_to_use)
+                
+                # 5. Pega a imagem final e aplica o flip
+                final_sprite_image = list_to_use[sprite_index]
+                
+                # Usa os flips corretos (flip_h, flip_v) que pegamos no passo 2
+                final_sprite_image = pygame.transform.flip(final_sprite_image, flip_h, flip_v)
+                
+                # 6. Adiciona às listas
+                self.body_imgs.append(final_sprite_image)
+                self.body_rects.append(final_sprite_image.get_rect(center=segment_pos))
+            
     def draw_body(self, surface: pygame.Surface) -> None:
-        """Desenha apenas o corpo na tela (usando os rects já calculados)."""
         for i in range(len(self.body_rects)):          
             surface.blit(self.body_imgs[i], self.body_rects[i])
-            
-
+           
     def draw_head(self, surface: pygame.Surface) -> None:
         """Desenha apenas a cabeça na tela (por cima do corpo)."""
         surface.blit(self.head_img, self.rect)

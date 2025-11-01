@@ -1,45 +1,30 @@
-# Classe que representa o coco da cobra
-# Se sobrar tempo implementar a funcao de seed
 import pygame
 import random
 from settings import *
 
-#Para iniciar a comida é necessário passar a textura da comida
 class Food:
     
-    sprites: dict[str,
-                    dict[str,
-                            list[pygame.Surface]]] 
-    
+    sprites: list[pygame.Surface]     
     image: pygame.Surface
     rect: pygame.Rect
-    
-    
-    def __init__(self, sprites_dict: dict[str,
-                                          dict[str,
-                                               list[pygame.Surface]]]):
         
-        self.sprites = sprites_dict
+    def __init__(self, sprites_dict: dict[str,any]):
         
-        self.image = self.sprites['food']['food'][0]
+        self.sprites = sprites_dict['food']        
+        self.image = self.sprites[0]
         self.rect = self.image.get_rect()
         
         self.respawn()
 
-    #Gera a comida em um lugar aleatório no mapa
-    def respawn(self) -> None:
-        #Transformar isso em uma funcão
-        self.image = self.sprites['food']['food'][random.randint(0,6)]
+    def respawn(self) -> None:        
         
-        # Gera a comida DENTRO dos limites da arena
-        # Adiciona um pequeno "padding" (ex: 10 pixels) para não nascer colado na parede
-        padding = 10 
-        
-        rand_x = random.randint(ARENA_LEFT + padding, ARENA_RIGHT - padding)
-        rand_y = random.randint(ARENA_TOP + padding, ARENA_BOTTOM - padding)
+        max_index = len(self.sprites) - 1
+        self.image = self.sprites[random.randint(0, max_index)]
+      
+        rand_x = random.randint(ARENA_LEFT + FOOD_PADDING, ARENA_RIGHT - FOOD_PADDING)
+        rand_y = random.randint(ARENA_TOP + FOOD_PADDING, ARENA_BOTTOM - FOOD_PADDING)
         self.rect.center = (rand_x, rand_y)
 
-    #Desenha a comida na tela
     def draw(self, surface: pygame.Surface) -> None:  
                      
         surface.blit(self.image, self.rect)
