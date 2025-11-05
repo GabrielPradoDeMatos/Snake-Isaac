@@ -1,0 +1,13 @@
+{
+    "Objetos": {
+        "Objeto_Nome": {
+            "tabela_origem":["PLKO.WERKS","PLKO.IDNRK"], 
+            "colunas_origem":["PLKO.WERKS","PLKO.IDNRK"],
+            "tabela_validacao":["PLKO.WERKS","PLKO.IDNRK"],
+            "colunas_validacao":["PLKO.WERKS","PLKO.IDNRK"]
+
+        }
+    }
+}
+            
+        

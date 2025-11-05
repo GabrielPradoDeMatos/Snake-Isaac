@@ -1,7 +1,22 @@
-#Coisas para arrumar em algum momento:
-#1 - As texturas estão deformando apos aplicar o pygame.transform.scale
-#2 - Adicionar animacao nas texturas
-
+#Implementar colisao por pixel
+#Menu de inicio
+#   -Nova partida
+#       -Solicitar o nome do jogador antes de iniciar
+#   -Records (Listar os top 10)
+#   -Sair
+#Menu de pausa
+#   -Retornar
+#   -Nova partida
+#   -Sair
+#Som
+#    -Book_page_tur ao mudar de menu
+#   -character_select_left e right
+#    -Menu, (Repentant,Those Responsible, The Binding of Issac,Greed, in the biginning, Penance )
+#    - Apos inicar o jogo Unknown Depths Below
+#   - Jogo ( Divine Combat, Repentant, S4cr1f1c14__, Dreadful, Burning Ambush)
+#   - Perder derp.mp3
+#   - Pegar comida SMB_large_chews_4
+#   - Nascer coco fart.mp3
 import pygame
 import sys
 import os
@@ -112,7 +127,7 @@ class Game:
                     
         self.snake.update()
 
-        if self.snake.check_collision_food(self.food.rect):
+        if self.snake.check_collision_food(self.food.rect,self.food.sprite_index):
             self.food.respawn() 
 
         if self.snake.check_collision_wall() or self.snake.check_collision_self():
@@ -193,16 +208,29 @@ class Game:
             fallback_head = self._create_fallback_surface(HEAD_SIZE, COLOR_HEAD_FALLBACK)
             fallback_body = self._create_fallback_surface(BODY_SIZE, COLOR_BODY_FALLBACK)
             fallback_food = self._create_fallback_surface(FOOD_SIZE,COLOR_FOOD_FALLBACK)
-            fallback_background = self._create_fallback_surface((SCREEN_WIDTH,SCREEN_HEIGHT),COLOR_BACKGROUND_FALLBACK)
-                        
-            self.sprites['head']['horizontal'] = [fallback_head]
-            self.sprites['head']['vertical'] = [fallback_head]
-            self.sprites['body']['horizontal'] = [fallback_body]
-            self.sprites['body']['vertical'] = [fallback_body]
-            self.sprites['food'] = [fallback_food]
-            self.sprites['background'] = [fallback_background]
+            fallback_leftover = self._create_fallback_surface(LEFTOVER_SIZE,COLOR_LEFTOVER_FALLBACK)
+            
+            fallback_arena = self._create_fallback_surface((ARENA_WIDTH,ARENA_HEIGHT),COLOR_ARENA_FALLBACK)
+            fallback_background_arena = self._create_fallback_surface((SCREEN_WIDTH,SCREEN_HEIGHT),COLOR_BACKGROUND_FALLBACK)
+            
+            fallback_background_arena.blit(fallback_arena,(ARENA_LEFT,ARENA_TOP))
+            
+            num_head_h = len(HEAD_SPRITE_NAMES['horizontal'])
+            num_head_v = len(HEAD_SPRITE_NAMES['vertical'])
+            num_body_h = len(BODY_SPRITE_NAMES['horizontal'])
+            num_body_v = len(BODY_SPRITE_NAMES['vertical'])
+            num_food = len(FOOD_SPRITE_NAMES['food'])
+            num_left_over = len(LEFTOVER_SPRITE_NAMES['leftover'])
+            
+            self.sprites['head']['horizontal'] = [fallback_head] * num_head_h
+            self.sprites['head']['vertical'] = [fallback_head] * num_head_v
+            self.sprites['body']['horizontal'] = [fallback_body] * num_body_h
+            self.sprites['body']['vertical'] = [fallback_body] * num_body_v
+            self.sprites['food'] = [fallback_food] * num_food
+            self.sprites['leftover'] = [fallback_leftover] * num_left_over
+            self.sprites['background'] = [fallback_background_arena]
 
-    def _create_fallback_surface(self, size: int, color: tuple[int,int,int]) -> pygame.Surface:
+    def _create_fallback_surface(self, size: tuple[int,int], color: tuple[int,int,int]) -> pygame.Surface:
         surface = pygame.Surface(size)
         surface.fill(color)
         return surface
@@ -252,6 +280,6 @@ class Game:
         self.screen.blit(go_surf, go_rect)
         self.screen.blit(restart_surf, restart_rect)
 
-if __name__ == "__main__": # __name__ == "__main__" quando o arquivo main.py é executado diretamente    
+if __name__ == "__main__":
     game = Game()   
     game.run()

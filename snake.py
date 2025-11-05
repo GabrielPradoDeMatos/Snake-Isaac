@@ -32,10 +32,10 @@ class Snake:
     
     animation_count_head: int
     animation_count_body: int
+    food_count: int
     
-    def __init__(self, sprites_dict: dict[str,
-                                          dict[str,
-                                               list[pygame.Surface]]]):
+    
+    def __init__(self, sprites_dict: dict[str, any]):
         
         self.sprites = sprites_dict                      
 
@@ -60,10 +60,11 @@ class Snake:
         self.pending_direction = None    
         self.last_turn_position = self.rect.center
         self.last_direction = self.direction.copy()
-        self.turn_cooldown_distance = self.rect.width * HEAD_P #HEAD_SIZE[0] * HEAD_P
+        self.turn_cooldown_distance = self.rect.width * HEAD_P
        
         self.score = 0
-
+        self.food_count = 0
+        
     #Após uma tecla ser pressionada o metodo verifica se é um movimento válido, caso seja, atribui a pending_direction a direcão da tecla pressionada
     #Essa direcão só será atualizada no metodo update
     def handle_input(self, event: pygame.event.Event) -> None:        
@@ -91,35 +92,25 @@ class Snake:
     def update(self) -> None:
 
         self._apply_turn()
+        
         self.animation_count_head += 1
         self.animation_count_body += 1
 
-        #sprite_list, flip_h, flip_v = self._get_head_config()
-        
-        # 3. Define a imagem da cabeça (sprite + flip) #self.current_frame_index
-        #Chamar a funcao para definir a sprite
-        self._update_head_sprite()
-        #raw_head_sprite = sprite_list[0]
-        #self.head_img = pygame.transform.flip(raw_head_sprite, flip_h, flip_v)
-        
-        # 4. Move a cobra (lógica original adaptada)
+        self._update_head_sprite()        
+
         new_head_rect = self.head_img.get_rect(center=self.rect.center)
         new_head_rect.move_ip(self.direction)
         self.rect = new_head_rect        
 
-        # 5. Adiciona a (posição, direção) ao histórico
+
         self.position_history.insert(0, (self.rect.center, self.direction.copy()))
                 
         
         # 4. Limita o tamanho do histórico com base no placar
-        max_history_len = (self.score + 2) * BODY_SPACING
-        if len(self.position_history) > max_history_len:
-            self.position_history.pop()
+        #max_history_len = (self.score + 2) * BODY_SPACING
+        #if len(self.position_history) > max_history_len:
+            #self.position_history.pop()
             
-               
-        #Chamar a funcao para definir a sprite        
-        #self._update_body_sprite()
-        #Pegar a nova posicao do corpo
         self._update_body_rects_and_sprites()
         
         #Essa funcão vai atualizar o self.head_img
@@ -181,10 +172,11 @@ class Snake:
         elif direction == self.DIR_UP:
             return self.sprites['body']['vertical'], False, False
         elif direction == self.DIR_DOWN:
-            return self.sprites['body']['vertical'], False, True           
+            return self.sprites['body']['vertical'], False, False           
     
-    def grow(self) -> None:
-        self.score += 1
+    def grow(self, food_index:int) -> None:
+        self.food_count += 1 
+        self.score += FOOD_RESPAWN_POINTS[food_index]
 
     def _update_body_rects_and_sprites(self) -> None:
         """
@@ -198,7 +190,7 @@ class Snake:
         # Este é o "deslocamento de tempo"
         time_frame_index = (self.animation_count_body // ANIMATION_DELAY_BODY)
 
-        for i in range(self.score):
+        for i in range(self.food_count):
             history_index = (i + 1) * BODY_SPACING        
             if history_index < len(self.position_history):
                 
@@ -210,7 +202,7 @@ class Snake:
                 list_to_use, flip_h, flip_v = self._get_body_config(segment_dir)
 
                 is_vertical = (segment_dir == self.DIR_UP or segment_dir == self.DIR_DOWN)
-                is_tail = (i == self.score - 1) # É o último segmento
+                is_tail = (i == self.food_count - 1) # É o último segmento
 
                 # 3. LÓGICA DE SELEÇÃO DE SPRITE (Req 2)
                 # Agora só precisamos nos preocupar com o caso vertical
@@ -256,9 +248,9 @@ class Snake:
         """Desenha apenas a cabeça na tela (por cima do corpo)."""
         surface.blit(self.head_img, self.rect)
 
-    def check_collision_food(self, food_rect: pygame.Rect) -> bool:
+    def check_collision_food(self, food_rect: pygame.Rect, food_index:int) -> bool:
         if self.rect.colliderect(food_rect):
-            self.grow()
+            self.grow(food_index)
             return True
         return False
 

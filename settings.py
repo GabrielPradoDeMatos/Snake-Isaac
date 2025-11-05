@@ -19,8 +19,9 @@ SCORE_Y_POSITION = 15
 SCORE_X_POSITION = SCREEN_WIDTH//2
 
 # --- 2. Configuracões do Jogo ---
-FPS = 30
-SNAKE_SPEED = 8
+#30,8
+FPS = 60
+SNAKE_SPEED = 4
 
 # --- 3. Configuracões da Arena ---
 ARENA_WIDTH = 710
@@ -35,11 +36,12 @@ ARENA_BOTTOM = ARENA_TOP + ARENA_HEIGHT
 HEAD_SIZE = (35, 38)
 BODY_SIZE = (27, 23)
 
-HEAD_P = 0.75 #Percentual da cabeça para cooldown de curva
-BODY_SPACING = 4 #Espaçamento entre os segmentos do corpo
+HEAD_P = 0.8 #Percentual da cabeça para cooldown de curva
+BODY_SPACING = 8 #Espaçamento entre os segmentos do corpo
 
 # --- 5. Configurações da Comida ---
 FOOD_SIZE = (27, 28)
+LEFTOVER_SIZE =(27,19)
 FOOD_PADDING  = 10 #Padding para comida não nascer colada na parede
 
 # --- 6. Cores ---
@@ -50,7 +52,9 @@ COLOR_WHITE = (255, 255, 255)
 COLOR_HEAD_FALLBACK = (0, 200, 0)
 COLOR_BODY_FALLBACK = (0, 150, 0)
 COLOR_FOOD_FALLBACK = (200, 0, 0)
-COLOR_BACKGROUND_FALLBACK = (0,0,0)
+COLOR_LEFTOVER_FALLBACK = (200, 0, 0)
+COLOR_ARENA_FALLBACK = (166, 130, 30)
+COLOR_BACKGROUND_FALLBACK = (0, 0, 0)
 
 # --- 8. Configuracões de Path ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) #Retorna o caminho absoluto do script
@@ -66,8 +70,8 @@ MAIN_GAME_FONT = "upheavtt.ttf"
 MAIN_FONT_PATH = os.path.join(ASSET_PATH,MAIN_GAME_FONT)
 
 # --- 10. Configuracões de Animacão ---
-ANIMATION_DELAY_HEAD = 2 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
-ANIMATION_DELAY_BODY = 8 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
+ANIMATION_DELAY_HEAD = 3 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
+ANIMATION_DELAY_BODY = 5 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
 BODY_VERTICAL_TAIL_COUNT = 2
 
 # --- 11. Configuracões de Sprite ---
@@ -88,3 +92,6 @@ FOOD_SPRITE_NAMES = {
 LEFTOVER_SPRITE_NAMES = {
     'leftover': ['leftover_1', 'leftover_2', 'leftover_3', 'leftover_4','leftover_5','leftover_6','leftover_7']  
 }
+
+FOOD_RESPAWN_WEIGHTS = [0.5,0.1,0.2,0.02,0.06,0.06,0.06]
+FOOD_RESPAWN_POINTS = [1,3,2,20,5,5,5]

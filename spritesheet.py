@@ -11,8 +11,7 @@ class Spritesheet:
               dict[str,
                    dict[str,int]]]   
     
-    
-    
+        
     def __init__(self, filename: str):
         self.filename = filename
         try:            
@@ -24,7 +23,7 @@ class Spritesheet:
         self.meta_data = self.filename.replace('.png', '.json') #Pegar os dados do arquivo JSON para mapear as texturas
         
         try:
-            with open(self.meta_data) as f:                
+            with open(self.meta_data, "r") as f:                
                 self.data = json.load(f) #Atributo data recebe um dicionário de dicionários com as informacoes do JSON
         except FileNotFoundError:
             print(f"Erro: Não foi encontrado o arquivo JSON: {self.meta_data}")
@@ -32,7 +31,7 @@ class Spritesheet:
         except json.JSONDecodeError:
             print(f"Erro: O arquivo JSON não está em um formato adequado: {self.meta_data}")
             raise
-
+        
     def parse_sprite(self, name: str) -> pygame.Surface:
         try:                    
             sprite_data = self.data['frames'][name]['frame'] #Recebe um dicionário com as informacoes, x,y,w,h da sprite solicitada 
