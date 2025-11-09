@@ -1,14 +1,19 @@
 import pygame
 from settings import *
 
-class Snake:
+class Snake(pygame.sprite.Sprite):
     
     sprites: dict[str,any] 
     
     original_head_img: pygame.Surface
     head_img: pygame.Surface
+    mask: pygame.Mask
+    
     body_imgs: list[pygame.Surface]
+    body_masks: list[pygame.Mask]
+    
     rect: pygame.Rect
+    
     position_history: list[
                         tuple[
                             tuple[int,int],
@@ -37,10 +42,13 @@ class Snake:
     
     def __init__(self, sprites_dict: dict[str, any]):
         
-        self.sprites = sprites_dict                      
-
+        super().__init__()  
+        
+        self.sprites = sprites_dict   
+           
         self.original_head_img = self.sprites['head']['horizontal'][0]
         self.body_imgs = []
+        self.body_masks = []
         self.animation_count_body = 0
         self.animation_count_head = 0
         self.head_img = self.original_head_img        
@@ -120,7 +128,8 @@ class Snake:
         sprite_list, flip_h, flip_v = self._get_head_config()
         sprite_index = (self.animation_count_head // ANIMATION_DELAY_HEAD) % len(sprite_list)
         self.head_img = pygame.transform.flip(sprite_list[sprite_index],flip_h,flip_v)        
-    
+        self.mask = pygame.mask.from_surface(self.head_img)
+        
     def _apply_turn(self) -> None:
         
         if self.pending_direction is None:
@@ -156,36 +165,33 @@ class Snake:
              
     def _get_head_config(self) -> tuple[list[pygame.Surface], bool, bool]:
             if self.direction == self.DIR_RIGHT:
-                return self.sprites['head']['horizontal'], False, False
+                return self.sprites['head']['horizontal'][2:], False, False
             elif self.direction == self.DIR_LEFT:
-                return self.sprites['head']['horizontal'], True, False
+                return self.sprites['head']['horizontal'][2:], True, False
             elif self.direction == self.DIR_UP:
-                return self.sprites['head']['vertical'], False, False
+                return self.sprites['head']['vertical'][2:], False, False
             elif self.direction == self.DIR_DOWN:
-                return self.sprites['head']['vertical'], False, True
+                return self.sprites['head']['vertical'][2:], False, True
             
     def _get_body_config(self, direction: pygame.math.Vector2) -> tuple[list[pygame.Surface], bool, bool]:
         if direction == self.DIR_RIGHT:
-            return self.sprites['body']['horizontal'], False, False
+            return self.sprites['body']['horizontal'][5:], False, False
         elif direction == self.DIR_LEFT:
-            return self.sprites['body']['horizontal'], True, False
+            return self.sprites['body']['horizontal'][5:], True, False
         elif direction == self.DIR_UP:
-            return self.sprites['body']['vertical'], False, False
+            return self.sprites['body']['vertical'][5:], False, False
         elif direction == self.DIR_DOWN:
-            return self.sprites['body']['vertical'], False, False           
+            return self.sprites['body']['vertical'][5:], False, False           
     
     def grow(self, food_index:int) -> None:
         self.food_count += 1 
         self.score += FOOD_RESPAWN_POINTS[food_index]
 
     def _update_body_rects_and_sprites(self) -> None:
-        """
-        Atualiza a lista de retângulos (para colisão) e de imagens (para desenho)
-        de cada segmento do corpo, aplicando a lógica de animação.
-        """
+
         self.body_rects.clear()
         self.body_imgs.clear()
-
+        self.body_masks.clear()
         # 1. Pega o frame de animação atual baseado no TEMPO (Req 3)
         # Este é o "deslocamento de tempo"
         time_frame_index = (self.animation_count_body // ANIMATION_DELAY_BODY)
@@ -238,6 +244,7 @@ class Snake:
                 
                 # 6. Adiciona às listas
                 self.body_imgs.append(final_sprite_image)
+                self.body_masks.append(pygame.mask.from_surface(final_sprite_image))
                 self.body_rects.append(final_sprite_image.get_rect(center=segment_pos))
             
     def draw_body(self, surface: pygame.Surface) -> None:
@@ -248,11 +255,16 @@ class Snake:
         """Desenha apenas a cabeça na tela (por cima do corpo)."""
         surface.blit(self.head_img, self.rect)
 
-    def check_collision_food(self, food_rect: pygame.Rect, food_index:int) -> bool:
-        if self.rect.colliderect(food_rect):
-            self.grow(food_index)
-            return True
-        return False
+    #def check_collision_food(self, food_rect: pygame.Rect, food_index:int) -> bool:
+        #if pygame.sprite.collide_mask(self.head_mask,food_rect):
+            #self.grow(food_index)
+            #return True
+        #return False
+            
+        #if self.rect.colliderect(food_rect):
+        #    self.grow(food_index)
+        #    return True
+        #return False
 
     def check_collision_wall(self) -> bool:
         return (self.rect.left < ARENA_LEFT or
@@ -261,11 +273,14 @@ class Snake:
                 self.rect.bottom > ARENA_BOTTOM)
 
     def check_collision_self(self) -> bool:
-        # Pula os primeiros segmentos (para não colidir com o "pescoço")
-        ignore_segments = int(self.turn_cooldown_distance / SNAKE_SPEED) + 1 
-        
-        # Itera sobre os rects do corpo (exceto o pescoço)
-        for body_rect in self.body_rects[ignore_segments:]:
+
+        rects_to_check = self.body_rects[SNAKE_IGNORE_SEGMENTS:]
+        masks_to_check = self.body_masks[SNAKE_IGNORE_SEGMENTS:]
+
+        for body_rect, body_mask in zip(rects_to_check, masks_to_check):
             if self.rect.colliderect(body_rect):
-                return True
+                offset = (body_rect.x - self.rect.x,body_rect.y - self.rect.y)
+                if self.mask.overlap(body_mask, offset):
+                    return True
+
         return False

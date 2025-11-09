@@ -22,6 +22,8 @@ SCORE_X_POSITION = SCREEN_WIDTH//2
 #30,8
 FPS = 60
 SNAKE_SPEED = 4
+SNAKE_IGNORE_SEGMENTS = 3
+CHAMPION_SELECTED = 1
 
 # --- 3. Configuracões da Arena ---
 ARENA_WIDTH = 710
@@ -42,7 +44,7 @@ BODY_SPACING = 8 #Espaçamento entre os segmentos do corpo
 # --- 5. Configurações da Comida ---
 FOOD_SIZE = (27, 28)
 LEFTOVER_SIZE =(27,19)
-FOOD_PADDING  = 10 #Padding para comida não nascer colada na parede
+FOOD_PADDING  = 20 #Padding para comida não nascer colada na parede
 
 # --- 6. Cores ---
 COLOR_BLACK = (0, 0, 0)
@@ -70,19 +72,20 @@ MAIN_GAME_FONT = "upheavtt.ttf"
 MAIN_FONT_PATH = os.path.join(ASSET_PATH,MAIN_GAME_FONT)
 
 # --- 10. Configuracões de Animacão ---
-ANIMATION_DELAY_HEAD = 3 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
+ANIMATION_DELAY_HEAD = 5 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
 ANIMATION_DELAY_BODY = 5 #Velocidade da animação (mudar de sprite a cada X frames do jogo)
 BODY_VERTICAL_TAIL_COUNT = 2
 
 # --- 11. Configuracões de Sprite ---
+#    'horizontal': ["head_h_1", "head_h_2","head_h_3", "head_h_4"],
 HEAD_SPRITE_NAMES = {
-    'horizontal': ["head_h_1", "head_h_2"],
-    'vertical':   ["head_v_1", "head_v_2"]
+    'horizontal': ["head_h_1","head_h_2","head_h_3", "head_h_4"],
+    'vertical':   ["head_v_1","head_v_2","head_v_3", "head_v_4"]
 }
-
+#'vertical':   ['body_v_1', 'body_v_2', 'body_v_3', 'body_v_4']
 BODY_SPRITE_NAMES = {
-    'horizontal': ['body_h_1', 'body_h_2', 'body_h_3', 'body_h_4'],
-    'vertical':   ['body_v_1', 'body_v_2', 'body_v_3', 'body_v_4']
+    'horizontal': ['body_h_1','body_h_2','body_h_3','body_h_4','body_h_5', 'body_h_6', 'body_h_7', 'body_h_8'],
+    'vertical':   ['body_v_1','body_v_2','body_v_3','body_v_4','body_v_5', 'body_v_6', 'body_v_7', 'body_v_8']
 }
 
 FOOD_SPRITE_NAMES = {

@@ -128,7 +128,7 @@ while running:
                     if input_text:
                         try:
                             # Tenta carregar o sprite
-                            current_sprite = pygame.transform.scale_by(my_spritesheet.parse_sprite(input_text),8)
+                            current_sprite = pygame.transform.scale_by(my_spritesheet.parse_sprite(input_text),7)
                             current_sprite_name = input_text
                             display_error_message = ""
                         except KeyError as e:

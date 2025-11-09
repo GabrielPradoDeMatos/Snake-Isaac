@@ -1,4 +1,6 @@
-#Implementar colisao por pixel
+#Implementar Record
+#Implementar Menu
+
 #Menu de inicio
 #   -Nova partida
 #       -Solicitar o nome do jogador antes de iniciar
@@ -64,6 +66,13 @@ class Game:
         self.debug_update_time = 0.0
         self.debug_draw_time = 0.0
         self.debug_frame_count = 0
+        
+        self.debug_draw_bg = 0.0
+        self.debug_draw_food = 0.0
+        self.debug_draw_snake_body = 0.0
+        self.debug_draw_snake_head = 0.0
+        self.debug_draw_ui = 0.0
+        self.debug_draw_flip = 0.0 # Medir o flip é MUITO importante
     
     def run(self) -> None: 
                
@@ -91,20 +100,45 @@ class Game:
             self.debug_frame_count += 1
 
             if self.debug_frame_count >= FPS:
+        # --- ATUALIZE O BLOCO DE IMPRESSÃO ---
+                
+                # Calcula médias
                 avg_event = (self.debug_event_time / self.debug_frame_count) * 1000
                 avg_update = (self.debug_update_time / self.debug_frame_count) * 1000
-                avg_draw = (self.debug_draw_time / self.debug_frame_count) * 1000
+                
+                # Novas médias de desenho
+                avg_draw_bg = (self.debug_draw_bg / self.debug_frame_count) * 1000
+                avg_draw_food = (self.debug_draw_food / self.debug_frame_count) * 1000
+                avg_draw_body = (self.debug_draw_snake_body / self.debug_frame_count) * 1000
+                avg_draw_head = (self.debug_draw_snake_head / self.debug_frame_count) * 1000
+                avg_draw_ui = (self.debug_draw_ui / self.debug_frame_count) * 1000
+                avg_draw_flip = (self.debug_draw_flip / self.debug_frame_count) * 1000
+                
+                avg_draw_total = avg_draw_bg + avg_draw_food + avg_draw_body + avg_draw_head + avg_draw_ui + avg_draw_flip
 
+                # Imprime o novo relatório
                 print(f"--- Média de Tempo (últimos {self.debug_frame_count} frames) ---")
                 print(f"Eventos: {avg_event:.4f} ms")
                 print(f"Update:  {avg_update:.4f} ms")
-                print(f"Draw:    {avg_draw:.4f} ms")
+                print(f"Draw:    {avg_draw_total:.4f} ms")
+                print(f"  ├─ Fundo:   {avg_draw_bg:.4f} ms")
+                print(f"  ├─ Comida:  {avg_draw_food:.4f} ms")
+                print(f"  ├─ Corpo:   {avg_draw_body:.4f} ms")
+                print(f"  ├─ Cabeça:  {avg_draw_head:.4f} ms")
+                print(f"  ├─ UI/Texto:{avg_draw_ui:.4f} ms")
+                print(f"  └─ Flip:    {avg_draw_flip:.4f} ms") # O "Flip" é a atualização da tela
                 print("---------------------------------")
 
+                # Reseta os contadores
                 self.debug_event_time = 0.0
                 self.debug_update_time = 0.0
-                self.debug_draw_time = 0.0
                 self.debug_frame_count = 0
+                self.debug_draw_bg = 0.0
+                self.debug_draw_food = 0.0
+                self.debug_draw_snake_body = 0.0
+                self.debug_draw_snake_head = 0.0
+                self.debug_draw_ui = 0.0
+                self.debug_draw_flip = 0.0
     
     def _handle_events(self) -> None:
         #pygame.event.get() pega TODOS os evendos registrados desde a última vez que o comando pygame.event.get() foi chamado
@@ -127,8 +161,9 @@ class Game:
                     
         self.snake.update()
 
-        if self.snake.check_collision_food(self.food.rect,self.food.sprite_index):
-            self.food.respawn() 
+        if self._check_collision_food(self.snake,self.food):
+            self.snake.grow(self.food.sprite_index)
+            self.food.respawn()
 
         if self.snake.check_collision_wall() or self.snake.check_collision_self():
             print("---------------------------Colisão detectada!---------------------------")
@@ -137,19 +172,45 @@ class Game:
     
     def _draw(self) -> None:   
 
-        self.screen.blit(self.sprites['background'][0], (0, 0)) 
+            # --- CAMINHO DE DEBUG (COM MEDIÇÃO) ---
+            
+            # t0 = Início da função _draw
+            t0 = time.perf_counter() 
+            
+            self.screen.blit(self.sprites['background'][0], (0, 0))
+            # t1 = Depois de desenhar o fundo
+            t1 = time.perf_counter() 
 
-        self.food.draw(self.screen)
-        self.snake.draw_body(self.screen)
-        self.snake.draw_head(self.screen)
+            self.food.draw(self.screen)
+            # t2 = Depois de desenhar a comida
+            t2 = time.perf_counter()
 
-        self._draw_score()
+            self.snake.draw_body(self.screen)
+            # t3 = Depois de desenhar o corpo
+            t3 = time.perf_counter()
 
-        if self.game_state == "game_over":
-            self._draw_game_over_overlay()
+            self.snake.draw_head(self.screen)
+            # t4 = Depois de desenhar a cabeça
+            t4 = time.perf_counter()
 
-        pygame.display.flip()
+            self._draw_score()
+            if self.game_state == "game_over":
+                self._draw_game_over_overlay()
+            # t5 = Depois de desenhar a UI (placar/game over)
+            t5 = time.perf_counter()
 
+            pygame.display.flip()
+            # t6 = Depois de atualizar a tela (flip)
+            t6 = time.perf_counter()
+
+            # --- Acumula os tempos de cada etapa ---
+            self.debug_draw_bg += (t1 - t0)
+            self.debug_draw_food += (t2 - t1)
+            self.debug_draw_snake_body += (t3 - t2)
+            self.debug_draw_snake_head += (t4 - t3)
+            self.debug_draw_ui += (t5 - t4)
+            self.debug_draw_flip += (t6 - t5)
+            
     def _quit_game(self) -> None:
         print("Encerrando o jogo...")
         pygame.quit()
@@ -191,7 +252,12 @@ class Game:
             print("Extraindo sprite da comida...")
             for name in FOOD_SPRITE_NAMES['food']:
                 sprite = my_spritesheet.parse_sprite(name)
-                self.sprites['food'].append(sprite)          
+                self.sprites['food'].append(sprite)   
+            
+            print("Extraindo sprite das migalhas...")
+            for name in LEFTOVER_SPRITE_NAMES['leftover']:
+                sprite = my_spritesheet.parse_sprite(name)
+                self.sprites['leftover'].append(sprite)        
                    
             print("Carregando cenário...")
             background_path = os.path.join(ASSET_PATH, ARENA_FILENAME)
@@ -220,14 +286,14 @@ class Game:
             num_body_h = len(BODY_SPRITE_NAMES['horizontal'])
             num_body_v = len(BODY_SPRITE_NAMES['vertical'])
             num_food = len(FOOD_SPRITE_NAMES['food'])
-            num_left_over = len(LEFTOVER_SPRITE_NAMES['leftover'])
+            num_leftover = len(LEFTOVER_SPRITE_NAMES['leftover'])
             
             self.sprites['head']['horizontal'] = [fallback_head] * num_head_h
             self.sprites['head']['vertical'] = [fallback_head] * num_head_v
             self.sprites['body']['horizontal'] = [fallback_body] * num_body_h
             self.sprites['body']['vertical'] = [fallback_body] * num_body_v
             self.sprites['food'] = [fallback_food] * num_food
-            self.sprites['leftover'] = [fallback_leftover] * num_left_over
+            self.sprites['leftover'] = [fallback_leftover] * num_leftover
             self.sprites['background'] = [fallback_background_arena]
 
     def _create_fallback_surface(self, size: tuple[int,int], color: tuple[int,int,int]) -> pygame.Surface:
@@ -279,6 +345,9 @@ class Game:
         
         self.screen.blit(go_surf, go_rect)
         self.screen.blit(restart_surf, restart_rect)
+
+    def _check_collision_food(self, snake: Snake, food: Food) -> bool:
+        return pygame.sprite.collide_mask(snake, food)
 
 if __name__ == "__main__":
     game = Game()   
